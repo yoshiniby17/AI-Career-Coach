@@ -11,6 +11,25 @@ from modules.groq_client import client
 import time
 
 
+# -------------------------------
+# PAGE CONFIG (only ONCE)
+# -------------------------------
+st.set_page_config(
+    page_title="AI Career Coach",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+import base64
+
+def get_base64(file_path):
+    with open(file_path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+bg = get_base64("assets/images/background.png")
+
+
 if "resume_file" not in st.session_state:
     st.session_state.resume_file = None
 
@@ -25,29 +44,39 @@ if "interview_analysis" not in st.session_state:
     
 if "interview_start_time" not in st.session_state:
     st.session_state.interview_start_time = None
-# -------------------------------
-# PAGE CONFIG
-# -------------------------------
-st.set_page_config(
-    page_title="AI Career Coach",
-    page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="expanded"
-    
-)
+
 
 # -------------------------------
 # LOAD CSS
 # -------------------------------
-css_path = os.path.join("assets", "style.css")
-
-if os.path.exists(css_path):
-    with open(css_path) as f:
+def load_css():
+    with open("style.css") as f:
         st.markdown(
             f"<style>{f.read()}</style>",
             unsafe_allow_html=True
         )
 
+load_css()
+
+st.markdown(f"""
+<style>
+
+.stApp {{
+    background-image:
+        linear-gradient(
+            rgba(8,15,35,0.20),
+            rgba(8,15,35,0.30)
+        ),
+        url("data:image/png;base64,{bg}");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}}
+
+</style>
+""", unsafe_allow_html=True)
 # -------------------------------
 # SESSION STATE
 # -------------------------------
@@ -70,6 +99,39 @@ default_states = {
 for key, value in default_states.items():
     if key not in st.session_state:
         st.session_state[key] = value
+        
+# -------------------------------
+# SIDEBAR BACKGROUND STYLE
+# -------------------------------
+
+sidebar_bg = get_base64("assets/images/ai_background.png")
+
+st.markdown(f"""
+<style>
+
+section[data-testid="stSidebar"] {{
+    background-image:
+        linear-gradient(
+            rgba(8,15,35,0.55),
+            rgba(8,15,35,0.55)
+        ),
+        url("data:image/png;base64,{sidebar_bg}") !important;
+
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}}
+
+section[data-testid="stSidebar"] > div {{
+    background: transparent !important;
+}}
+
+section[data-testid="stSidebar"] * {{
+    color: white !important;
+}}
+
+</style>
+""", unsafe_allow_html=True)
 
 # -------------------------------
 # SIDEBAR
@@ -78,98 +140,180 @@ for key, value in default_states.items():
 # Logo (Optional)
 # st.sidebar.image("assets/logo.png", width=120)
 
-st.sidebar.title("🤖 AI Career Coach")
+with st.sidebar:
 
-st.sidebar.title("AI Career Coach")
+    st.markdown("""
+    <div style="text-align:center;padding:10px 0 20px 0;">
+        <h2 style="color:white;margin-bottom:5px;">🤖 AI Career Coach</h2>
+        <p style="color:#94A3B8;font-size:14px;">
+            Smart Resume & Career Assistant
+        </p>
+        <hr style="border:1px solid #334155;">
+    </div>
+    """, unsafe_allow_html=True)
 
-page = st.sidebar.radio(
-    "Navigation",
-    [
-        "🏠 Dashboard",
-        "📄 Resume Analysis",
-        "📊 ATS Score",
-        "🎯 JD Matching",
-        "🎤 AI Interview",
-        "📝 Cover Letter",
-        "📚 Learning Roadmap",
-        "📑 Final Report"
-    ]
-)
-
+    page = st.radio(
+        "",
+        [
+            "🏠 Dashboard",
+            "📄 Resume Analysis",
+            "📊 ATS Score",
+            "🎯 JD Matching",
+            "🎤 AI Interview",
+            "📝 Cover Letter",
+            "📚 Learning Roadmap",
+            "📑 Final Report"
+        ]
+    )
 # -------------------------------
 # DASHBOARD
 # -------------------------------
 
 if page == "🏠 Dashboard":
 
-    st.markdown(
-        "<h1 class='main-title'>🤖 AI Career Coach & Resume Tailor</h1>",
-        unsafe_allow_html=True
-    )
+    st.markdown("""
+<div class="hero-banner">
 
-    st.write("")
+<h1>🤖 AI Career Coach Pro</h1>
 
-    col1, col2 = st.columns(2)
+<h3>Analyze • Improve • Get Hired</h3>
+
+<p style="font-size:18px;">
+Your AI-powered career assistant for Resume Analysis, ATS Optimization,
+Interview Preparation, Cover Letter Generation and Career Roadmap.
+</p>
+
+<p style="font-size:16px;opacity:0.9;">
+✨ <b>"Success begins with preparation. Let AI guide your career."</b>
+</p>
+
+</div>
+""", unsafe_allow_html=True)
+
+    # Dashboard Status
+    resume_uploaded = bool(st.session_state.get("resume_text"))
+    ats = st.session_state.get("ats_score", None)
+    jd_match = st.session_state.get("jd_match_score", None)
+    interview_done = bool(st.session_state.get("interview_analysis"))
+    report_ready = bool(st.session_state.get("report_pdf"))
+
+    # ---------------- Metric Cards ----------------
+
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-
-        st.markdown("""
-        <div class="card">
-        <h3>🚀 Features</h3>
-
-        ✔ Resume Upload
-
-        ✔ Resume Analysis
-
-        ✔ ATS Score
-
-        ✔ JD Matching
-
-        ✔ AI Interview
-
-        ✔ Cover Letter
-
-        ✔ Learning Roadmap
-
-        ✔ Final Report
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">📄</div>
+            <div class="metric-title">Resume</div>
+            <div class="metric-value">
+                {"Uploaded" if resume_uploaded else "Not Uploaded"}
+            </div>
+            <div class="metric-sub">Upload your resume</div>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
 
-        st.markdown("""
-        <div class="card">
-        <h3>🎯 Project Goal</h3>
+        ats_text = "--"
 
-        Upload Resume
+        if ats:
+            ats_text = f"{ats['score']}%"
 
-        ↓
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-title">ATS Score</div>
+            <div class="metric-value">{ats_text}</div>
+            <div class="metric-sub">Resume Analysis</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        Upload Job Description
+    with col3:
 
-        ↓
+        jd_text = "--"
 
-        AI Analysis
+        if jd_match is not None:
+            jd_text = f"{jd_match}%"
 
-        ↓
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">💼</div>
+            <div class="metric-title">JD Match</div>
+            <div class="metric-value">{jd_text}</div>
+            <div class="metric-sub">Job Compatibility</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        ATS Score
+    with col4:
 
-        ↓
-
-        AI Interview
-
-        ↓
-
-        Hiring Recommendation
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-icon">🤖</div>
+            <div class="metric-title">AI Status</div>
+            <div class="metric-value">
+                {"Ready" if resume_uploaded else "Waiting"}
+            </div>
+            <div class="metric-sub">Career Assistant</div>
         </div>
         """, unsafe_allow_html=True)
 
     st.write("")
 
-    st.info("👈 Select a module from the left sidebar.")
+    # ---------------- Quick Actions & Progress ----------------
 
+    left, right = st.columns(2)
 
+    with left:
+
+        st.markdown("### 🚀 Quick Actions")
+
+        st.info("📄 Upload Resume")
+        st.info("💼 Paste Job Description")
+        st.info("🤖 Analyze Resume")
+        st.info("🎯 Check ATS Score")
+        st.info("🎤 Start AI Interview")
+        st.info("📑 Download Final Report")
+
+    with right:
+
+        st.markdown("### 📈 Progress")
+
+        st.success("✅ Resume Uploaded" if resume_uploaded else "⬜ Resume Not Uploaded")
+        st.success("✅ ATS Completed" if ats else "⬜ ATS Pending")
+        st.success("✅ JD Matching Completed" if jd_match is not None else "⬜ JD Matching Pending")
+        st.success("✅ Interview Completed" if interview_done else "⬜ Interview Pending")
+        st.success("✅ Report Generated" if report_ready else "⬜ Report Pending")
+
+    st.write("")
+
+    # ---------------- Recent Activity ----------------
+
+    st.markdown("### 🔥 Recent Activity")
+
+    if resume_uploaded:
+        st.success("📄 Resume uploaded successfully.")
+
+    if ats:
+        st.success("🎯 ATS Score generated.")
+
+    if jd_match is not None:
+        st.success("💼 JD Matching completed.")
+
+    if interview_done:
+        st.success("🎤 Interview completed.")
+
+    if report_ready:
+        st.success("📑 Final Report generated.")
+
+    if not any([
+        resume_uploaded,
+        ats,
+        jd_match is not None,
+        interview_done,
+        report_ready
+    ]):
+        st.info("No activity yet. Upload your resume to get started.")
 # -------------------------------
 # RESUME ANALYSIS
 # -------------------------------
@@ -193,6 +337,13 @@ elif page == "📄 Resume Analysis":
         st.session_state.resume_name = resume.name
 
 
+    if "resume_file" not in st.session_state:
+        st.session_state.resume_file = None
+
+    if "resume_name" not in st.session_state:
+        st.session_state.resume_name = ""
+
+
     if st.session_state.resume_file is not None:
 
         resume = st.session_state.resume_file
@@ -205,81 +356,105 @@ elif page == "📄 Resume Analysis":
         )
 
 
-        st.subheader("Paste Job Description")
+    st.subheader("Paste Job Description")
 
 
-        job_description = st.text_area(
-            "Job Description",
-            height=250,
-            key="jd_input",
-            value=st.session_state.job_description
-        )
+    job_description = st.text_area(
+        "Job Description",
+        height=250,
+        key="jd_input"
+    )
 
 
-        st.session_state.job_description = job_description
+    st.session_state.job_description = job_description
 
 
-        if st.button("Analyze Resume"):
+
+    if st.button("Analyze Resume"):
 
 
-            if resume is None:
+        if resume is None:
 
-                st.warning("Please upload resume.")
-
-
-            elif job_description.strip() == "":
-
-                st.warning("Please paste Job Description.")
+            st.warning("Please upload resume.")
 
 
-            else:
+        elif job_description.strip() == "":
 
-                resume_text = extract_resume(resume)
-                st.code(resume_text[:500])
-
-                st.session_state.candidate_name = extract_candidate_name(resume_text)
-                st.session_state.resume_text = resume_text
+            st.warning("Please paste Job Description.")
 
 
-                with st.spinner("Analyzing Resume..."):
+        else:
 
-                    analysis = analyze_resume(
-                        resume_text,
-                        job_description
-                    )
+            resume_text = extract_resume(resume)
 
-                    ats = calculate_ats_score(
-                        resume_text,
-                        job_description
-                    )
-                    
-                    st.write(ats)
-                
-                    match_score = calculate_jd_match(
-                    resume_text,
-                    job_description
-                    )
-
-                st.session_state.jd_match_score = match_score
-
-                st.session_state.resume_analysis = analysis
-                st.session_state.ats_score = ats
+            st.session_state.resume_text = resume_text
 
 
-                st.success("✅ Resume analyzed successfully.")
+            st.session_state.candidate_name = extract_candidate_name(
+                resume_text
+            )
 
+
+            with st.spinner("🤖 AI is analyzing your resume..."):
+
+                time.sleep(1)
+
+                analysis = analyze_resume(
+                resume_text,
+                job_description
+                )
+
+                time.sleep(0.5)
+
+                ats = calculate_ats_score(
+                resume_text,
+                job_description
+                )
+
+                time.sleep(0.5)
+
+                match_score = calculate_jd_match(
+                resume_text,
+                job_description
+                )
+
+            st.session_state.resume_analysis = analysis
+            st.session_state.ats_score = ats
+            st.session_state.jd_match_score = match_score
+
+
+            st.toast("🎉 Resume Analysis Completed", icon="🎉")
+
+            st.markdown("""
+            <div style="
+            padding:15px;
+            background:#16A34A;
+            color:white;
+            border-radius:10px;
+            font-weight:bold;
+            text-align:center;
+            margin-top:10px;
+            ">
+            ✅ AI Analysis Completed Successfully
+            </div>
+            """, unsafe_allow_html=True)
 
     # Always show Resume Analysis
+
     if st.session_state.get("resume_analysis"):
 
         st.divider()
 
         st.subheader("📄 Resume Analysis")
 
-        st.write(st.session_state.resume_analysis)
-                
+        st.write(
+            st.session_state.resume_analysis
+        )
+        
+        
+        
 # -------------------------------
-# ATS
+# ATS SCORE
 # -------------------------------
 
 elif page == "📊 ATS Score":
@@ -288,39 +463,89 @@ elif page == "📊 ATS Score":
 
     ats = st.session_state.get("ats_score", None)
 
-    if ats is None or ats == 0:
+    if ats is None:
         st.warning("⚠ Please analyze your resume first.")
 
     else:
 
-        st.progress(ats["score"] / 100)
+        # If ATS is stored as integer
+        if isinstance(ats, int):
 
-        st.metric(
-            "ATS Score",
-            f"{ats['score']}%"
-        )
+            ats = {
+                "score": ats,
+                "matched": [],
+                "missing": []
+            }
+
+        # Metrics
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            st.metric(
+                "ATS Score",
+                f"{ats['score']}%"
+            )
+
+            st.progress(ats["score"] / 100)
+
+
+        with col2:
+
+            st.metric(
+                "Matched Skills",
+                len(ats.get("matched", []))
+            )
+
+
+        with col3:
+
+            st.metric(
+                "Missing Skills",
+                len(ats.get("missing", []))
+            )
+
+
+        st.divider()
+
+
+        # Skills Lists
 
         col1, col2 = st.columns(2)
+
 
         with col1:
 
             st.success("✅ Matched Skills")
 
-            if ats["matched"]:
-                st.write(", ".join(ats["matched"]))
+            matched = ats.get("matched", [])
+
+            if matched:
+
+                for skill in matched:
+                    st.write(f"✔ {skill}")
+
             else:
-                st.write("No matched skills found.")
+
+                st.info("No matched skills found.")
+
+
 
         with col2:
 
             st.error("❌ Missing Skills")
 
-            if ats["missing"]:
-                st.write(", ".join(ats["missing"]))
+            missing = ats.get("missing", [])
+
+            if missing:
+
+                for skill in missing:
+                    st.write(f"⚠ {skill}")
+
             else:
-                st.write("No missing skills.")
-                
-            
+
+                st.success("No missing skills.")
+
 # -------------------------------
 # JD MATCH
 # -------------------------------
@@ -333,18 +558,22 @@ elif page == "🎯 JD Matching":
         st.warning("⚠ Please analyze your resume first.")
 
     else:
-        st.subheader("📊 JD Match Score")
+    
 
-        st.progress(st.session_state.jd_match_score / 100)
+           st.subheader("📊 JD Match Score")
 
-        st.metric(
-            "JD Match Score",
-            f"{st.session_state.jd_match_score}%"
-        )
+           jd = st.session_state.jd_match_score
 
-        st.success(
-            f"Your resume matches {st.session_state.jd_match_score}% with the Job Description."
-        )
+           st.metric(
+           "JD Match Score",
+           f"{jd}%"
+           )
+
+           st.progress(jd / 100)
+
+           st.success(
+           f"Your resume matches {jd}% with the Job Description."
+           )
 
 # -------------------------------
 # INTERVIEW
@@ -468,28 +697,28 @@ elif page == "🎤 AI Interview":
 
         if st.button("✅ Finish Interview"):
 
-            if len(user_answers) < 3:
-                st.warning("⚠ Please answer at least 3 interview questions before finishing.")
+           if len(user_answers) < 3:
+              st.warning("⚠ Please answer at least 3 interview questions before finishing.")
 
-            else:
-                analysis = analyze_interview(
-                    st.session_state.resume_text,
-                    st.session_state.job_description,
-                    st.session_state.chat_history
-                )
+           else:
 
-                st.session_state.interview_analysis = analysis
+              with st.spinner("🤖 AI is evaluating your interview..."):
 
-                st.success("✅ Interview Evaluation Completed!")
+                 analysis = analyze_interview(
+                     st.session_state.resume_text,
+                     st.session_state.job_description,
+                     st.session_state.chat_history
+                 )
 
-        # ✅ Always show analysis
-        if st.session_state.get("interview_analysis"):
+                 st.session_state.interview_analysis = analysis
 
-            st.divider()
-            st.subheader("📊 Interview Analysis")
-            st.write(st.session_state.interview_analysis)
+                 
+        # Show interview analysis ONLY here
+    if st.session_state.get("interview_analysis"):
 
-
+        st.divider()
+        st.subheader("📊 Interview Analysis")
+        st.write(st.session_state.interview_analysis)
 
 # -------------------------------
 # COVER LETTER
@@ -694,3 +923,9 @@ def extract_candidate_name(resume_text):
             return line
 
     return "Candidate"
+
+    st.divider()
+
+    st.caption(
+    "Built with ❤️ using Python • Streamlit • Groq"
+)
